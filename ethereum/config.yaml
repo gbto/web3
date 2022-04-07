@@ -1,0 +1,6 @@
+ethereum:
+  NODE_URL: https://eth-mainnet.alchemyapi.io/v2/
+  API_URL: https://api.etherscan.io/api?
+polygon:
+  NODE_URL: https://polygon-mainnet.g.alchemy.com/v2/
+  API_URL: https://api.polygonscan.com/api?

@@ -1,0 +1,15 @@
+[features]
+seeds = false
+
+[programs.devnet]
+gif_portal_rust = "2Ph9ShJ7wV3PwPdrFcFaJZm53t33CSBYkv3DEB56cdsq"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "devnet"
+wallet = "/Users/quentin.gaborit/.config/solana/id.json"
+
+[scripts]
+test = "node tests/gif-portal-rust.js"

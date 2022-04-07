@@ -1,0 +1,26 @@
+ethereum:
+  NODE_URL: https://eth-mainnet.alchemyapi.io/v2/
+  API_URL: https://api.etherscan.io/api?
+polygon:
+  NODE_URL: https://polygon-mainnet.g.alchemy.com/v2/
+  API_URL: https://api.polygonscan.com/api?
+contracts:
+  polygon:
+  - "0x68456b298c230415e2de7ad4897a79ee3f1a965a"
+  - "0x7d60f21072b585351dfd5e8b17109458d97ec120"
+  - "0xdd24327ff0b55a6213f91dbf5a8a894585836835"
+  ethereum:
+  - "0x20d1b558ef44a6e23d9bf4bf8db1653626e642c3"
+  - "0x221738f73fa4bfca91918e77d112b87d918c751f"
+  - "0x227e4635c5fe22d1e36dab1c921b62f8acc451b9"
+  - "0x24129b935aff071c4f0554882c0d9573f4975fed"
+  - "0x478bbc744811ee8310b461514bdc29d03739084d"
+  - "0x5af15da84a4a6edf2d9fa6720de921e1026e37b7"
+  - "0x839a989be40f2d60f00beeb648903732c041cbd7"
+  - "0x9b8f14554f40705de7908879e2228d2ac94fde1a"
+  - "0xa2761b0539374eb7af2155f76eb09864af075250"
+  - "0xa324a2e3a6f64bd588565e0e1e2dd50e7a68bdd9"
+  - "0xac14864ce5a98af3248ffbf549441b04421247d3"
+  - "0xb17640796e4c27a39af51887aff3f8dc0daf9567"
+  - "0xbc10c4f7b9fe0b305e8639b04c536633a3db7065"
+  - "0xcd6997334867728ba14d7922f72c893fcee70e84"
