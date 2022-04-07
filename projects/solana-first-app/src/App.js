@@ -4,6 +4,7 @@ import Sidebar from './components/common_elements/Sidebar';
 import Home from './components/pages/Home';
 import Transfers from './components/pages/Transfers';
 import SignUp from './components/pages/SignUp';
+import Wallet from './components/pages/Wallet';
 
 import './App.css';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
@@ -13,6 +14,7 @@ const App = () =>  {
     <>
       <Router>
         <Navbar />
+
         <Sidebar
           pageWrapId={"page-wrap"}
           outerContainerId={"outer-container"}
@@ -21,6 +23,7 @@ const App = () =>  {
         <Switch>
           <Route path="/" exact component={Home} />
           <Route path="/transfers" component={Transfers} />
+          <Route path="/wallet" component={Wallet} />
           <Route path="/sign-up" component={SignUp} />
         </Switch>
       </Router>
