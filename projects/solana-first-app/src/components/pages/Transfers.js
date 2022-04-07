@@ -11,7 +11,7 @@ function Transfers() {
         <div className="transfers-header">
           <h1>Transfer assets</h1>
           <div>
-            <p className="text-body">
+            <p className="transfers-header-text">
               Feeling like trying few transactions while making a happy friend? Here's
               the space where you can realize the transactions you'd like on Solana network.
             </p>
@@ -37,7 +37,7 @@ function Transfers() {
             </div>
           </div>
 
-          <div className="transfers-mid-column transfers-item transfers-item-3">
+          <div className="transfers-mid-column transfers-item">
             <p>
               This container will hold the interface to realize a transfer from
               one recipient to another.
