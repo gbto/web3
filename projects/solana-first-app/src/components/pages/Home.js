@@ -8,20 +8,53 @@ function Home() {
     <>
       <div className="home">
         <div className="home-header">
-          <h1>Welcome back</h1>
+          <h1>Welcome</h1>
           <div className="home-header-text">
-            <p className="text-body">
+            <p className="text-body home-box-items">
               Welcome to GBTO decentralized app. Here, you'll be able to use you
               wallet to do great things, like sending money to your friends and
-              see who amongst them is the luckiest one.
+              monitor how you're spending on Solana network.
             </p>
           </div>
         </div>
 
         <div className="home-body">
-          <div className="home-items home-box-1 "> Item 1</div>
-          <div className="home-items home-box-2 "> Item 2</div>
-          <div className="home-items home-box-3 "> Item 3</div>
+          <div className="home-items home-box-1 ">
+            <div className="home-box-items img">
+              <img src="images/img-2.jpg" alt="Solana" />
+              <h2>This is the place where it all begins</h2>
+              <br></br>
+              <p>
+                Where everything starts to make sense, where the excitement is
+                already beyond any reason and you realize how much shit is
+                written on this page.
+              </p>
+            </div>
+          </div>
+          <div className="home-items home-box-2 ">
+            <div className="home-box-items">
+              <img src="images/img-3.jpg" alt="Solana" />
+              <h2>This is the place where it all begins</h2>
+              <br></br>
+              <p>
+                Where everything starts to make sense, where the excitement is
+                already beyond any reason and you realize how much shit is
+                written on this page.
+              </p>
+            </div>
+          </div>
+          <div className="home-items home-box-3 ">
+            <div className="home-box-items">
+              <img src="/images/img-4.jpeg" alt="Solana " />
+              <h2>This is the place where it all begins</h2>
+              <br></br>
+              <p>
+                Where everything starts to make sense, where the excitement is
+                already beyond any reason and you realize how much shit is
+                written on this page.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
       <Footer />
