@@ -19,15 +19,16 @@
     width: 100vw;
     height: 70vh;
     display: flex;
+    border: 1px solid rgb(255, 255, 255);
     background-color: rgb(225, 225, 225);
     flex-direction: row;
-
 }
 
 .wallet-box-items {
     font-size: 20px;
   color:rgb(94, 94, 94);
 }
+
 /* columns containers */
 .wallet-left-column {
     width: 30vw;
@@ -55,11 +56,9 @@
     padding:30px;
     flex-wrap:stretch;
 }
-
 .wallet-item-1 {
     height: 35vh;
 }
-
 .wallet-item-2 {
     height: 35vh;
 }

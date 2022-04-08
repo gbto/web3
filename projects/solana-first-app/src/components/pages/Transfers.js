@@ -9,7 +9,7 @@ function Transfers() {
       <div className="transfers">
 
         <div className="transfers-header">
-          <h1>Transfer assets</h1>
+          <h1>Transfers</h1>
           <div>
             <p className="transfers-header-text">
               Feeling like trying few transactions while making a happy friend? Here's
