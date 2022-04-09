@@ -1,0 +1,70 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+# Pre-commit hooks
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+  hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+  - id: debug-statements
+  language_version: python3
+
+# Python re-order imports
+- repo: https://github.com/asottile/reorder_python_imports
+  rev: v2.6.0
+  hooks:
+  - id: reorder-python-imports
+    args: [--application-directories=.:src, --py36-plus]
+
+# Python upgrade synthax for newer versions of the language
+- repo: https://github.com/asottile/pyupgrade
+  rev: v2.29.0
+  hooks:
+  - id: pyupgrade
+    args: [--py36-plus]
+
+# Python Black formatting
+- repo: https://github.com/psf/black
+  rev: 21.9b0
+  hooks:
+  - id: black
+    args: [--safe]
+    additional_dependencies: ['click==8.0.4']
+
+# # TODO: Review the configuration file to avoid some errors
+# # Python Flake8 linting
+# - repo: https://github.com/pycqa/flake8
+#   rev: 4.0.1
+#   hooks:
+#   - id: flake8
+#     additional_dependencies: [
+#       flake8-black>=0.2.4,
+#       flake8-docstrings,
+#     ]
+
+# YAML linting
+- repo: https://github.com/adrienverge/yamllint.git
+  rev: v1.26.3
+  hooks:
+  - id: yamllint
+    args: [-c=.yamllint]
+
+# Parse documentation
+- repo: https://github.com/pycqa/doc8
+  rev: 0.10.1
+  hooks:
+  - id: doc8
+    args: [
+      --file-encoding,
+      utf8,
+    ]
+    files: docs/source/.*\.rst$
+
+# SQL sqlfluff linting
+- repo: https://github.com/sqlfluff/sqlfluff
+  rev: 0.9.1
+  hooks:
+  - id: sqlfluff-lint
