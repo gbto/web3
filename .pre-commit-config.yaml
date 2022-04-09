@@ -10,7 +10,7 @@ repos:
   - id: check-yaml
   - id: check-added-large-files
   - id: debug-statements
-  language_version: python3
+    language_version: python3
 
 # Python re-order imports
 - repo: https://github.com/asottile/reorder_python_imports
@@ -52,7 +52,7 @@ repos:
   - id: yamllint
     args: [-c=.yamllint]
 
-# Parse documentation
+# Parse docstrings and documentation
 - repo: https://github.com/pycqa/doc8
   rev: 0.10.1
   hooks:
@@ -62,6 +62,12 @@ repos:
       utf8,
     ]
     files: docs/source/.*\.rst$
+
+# # Check docstrings against functions implementations
+# - repo: https://github.com/terrencepreilly/darglint
+#   rev: master
+#   hooks:
+#   - id: darglint
 
 # SQL sqlfluff linting
 - repo: https://github.com/sqlfluff/sqlfluff
