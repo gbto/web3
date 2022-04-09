@@ -1,22 +1,21 @@
 import os
+
 import pandas as pd
 from neo4j import GraphDatabase
 
 
 class Web3GraphModelling:
-
     def __init__(self):
 
         self.txs_model = self.TransactionBasedModelling()
         self.add_model = self.AccountBasedModelling()
 
-    class TransactionBasedModelling():
-
+    class TransactionBasedModelling:
         def __init__(self):
 
-            __neo_uri = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
-            __neo_usr = os.environ.get('NEO4J_USR', 'neo4j')
-            __neo_pwd = os.environ.get('NEO4J_PWD', 'ledger')
+            __neo_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+            __neo_usr = os.environ.get("NEO4J_USR", "neo4j")
+            __neo_pwd = os.environ.get("NEO4J_PWD", "ledger")
 
             self.driver = self.__instantiate_driver(__neo_uri, __neo_usr, __neo_pwd)
             self.session = self.driver.session()
@@ -26,7 +25,7 @@ class Web3GraphModelling:
             try:
                 return GraphDatabase.driver(uri, auth=(usr, pwd))
             except OSError:
-                raise ConnectionError('Could not connect to the neo4j bolt server at {}'.format(uri))
+                raise ConnectionError(f"Could not connect to the neo4j bolt server at {uri}")
 
         def create_blocks(self, logs: pd.DataFrame):
             """Creates the chain of blocks."""
@@ -34,7 +33,7 @@ class Web3GraphModelling:
             self.session.run("CREATE CONSTRAINT ON (b:Block) ASSERT b.blockNumber IS UNIQUE")
             previous_block = None
 
-            for index, row in logs.sort_values('blockNumber', ascending=True).iterrows():
+            for index, row in logs.sort_values("blockNumber", ascending=True).iterrows():
                 lines = list()
                 if previous_block:
                     lines.append(f"MATCH (previous_block:Block) WHERE previous_block.height={previous_block}")
@@ -46,27 +45,29 @@ class Web3GraphModelling:
                 lines.append(f"SET b.height={row['blockNumber']}")
                 lines.append(f"SET b.timestamp='{row['timeStamp'].strftime('%Y/%m/%d-%H:%M:%S')}'")
 
-                statement = '\n'.join(lines)
+                statement = "\n".join(lines)
                 self.session.run(statement)
 
-                previous_block = row['blockNumber']
+                previous_block = row["blockNumber"]
 
             return
 
         def create_addresses(self, logs: pd.DataFrame):
-            """Creates all nodes in the contracts logs dataset. We'll create both smart contracts
-            accounts and wallet accounts."""
+            """Creates all nodes in the contracts logs dataset.
+
+            We'll create both smart contracts accounts and wallet accounts.
+            """
 
             self.session.run("CREATE CONSTRAINT ON (node:Account) ASSERT node.address IS UNIQUE")
 
             # Create contract nodes
-            for address in logs['to_'].unique():
-                statement = 'MERGE (:Account:Contract {address: $address})'
+            for address in logs["to_"].unique():
+                statement = "MERGE (:Account:Contract {address: $address})"
                 self.session.run(statement, dict(address=address))
 
             # Create wallet nodes
-            for address in logs['from_'].unique():
-                statement = 'MERGE (:Account:Wallet {address: $address})'
+            for address in logs["from_"].unique():
+                statement = "MERGE (:Account:Wallet {address: $address})"
                 self.session.run(statement, dict(address=address))
 
             return
@@ -77,7 +78,7 @@ class Web3GraphModelling:
 
             self.session.run("CREATE CONSTRAINT ON (tx:Transaction) ASSERT tx.hash IS UNIQUE")
 
-            for index, row in logs.sort_values('blockNumber', ascending=True).iterrows():
+            for index, row in logs.sort_values("blockNumber", ascending=True).iterrows():
                 lines = list()
 
                 # Create transactions nodes
@@ -110,14 +111,14 @@ class Web3GraphModelling:
                 lines.append("MERGE (tx) - [:TO] -> (to)")
 
                 # execute the cypher statement
-                statement = '\n'.join(lines)
+                statement = "\n".join(lines)
                 self.session.run(statement)
 
             return
 
         def create_relationships(self, logs: pd.DataFrame):
 
-            for index, row in logs.sort_values('blockNumber', ascending=True).iterrows():
+            for index, row in logs.sort_values("blockNumber", ascending=True).iterrows():
 
                 lines = list()
 
@@ -126,31 +127,30 @@ class Web3GraphModelling:
                 lines.append(f"CREATE(from) - [r:{row['function_called']}] -> (to)")
 
                 # execute the cypher statement
-                statement = '\n'.join(lines)
+                statement = "\n".join(lines)
                 result = self.session.run(statement)
 
-            return
+            return result
 
         def create_graph_model(self, logs: pd.DataFrame):
             """Creates the entire model of the logs ingested from web3."""
-            model.reset_database()
-            model.create_blocks(logs)
-            model.create_addresses(logs)
-            model.create_transactions(logs)
-            model.create_relationships(logs)
+            self.reset_database()
+            self.create_blocks(logs)
+            self.create_addresses(logs)
+            self.create_transactions(logs)
+            self.create_relationships(logs)
 
-        def reset_database(self, database: str = 'neo4j'):
+        def reset_database(self, database: str = "neo4j"):
 
             reset_statement = f"CREATE OR REPLACE DATABASE {database}"
             result = self.session.run(reset_statement)
             return result
 
-    class AccountBasedModelling():
-
+    class AccountBasedModelling:
         def __init__(self):
-            __neo_uri = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
-            __neo_usr = os.environ.get('NEO4J_USR', 'neo4j')
-            __neo_pwd = os.environ.get('NEO4J_PWD', 'ledger')
+            __neo_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+            __neo_usr = os.environ.get("NEO4J_USR", "neo4j")
+            __neo_pwd = os.environ.get("NEO4J_PWD", "ledger")
 
             self.driver = self.__instantiate_driver(__neo_uri, __neo_usr, __neo_pwd)
             self.session = self.driver.session()
@@ -160,15 +160,15 @@ class Web3GraphModelling:
             try:
                 return GraphDatabase.driver(uri, auth=(usr, pwd))
             except OSError:
-                raise ConnectionError('Could not connect to the neo4j bolt server at {}'.format(uri))
+                raise ConnectionError(f"Could not connect to the neo4j bolt server at {uri}")
 
         def create_user_nodes(self, logs: pd.DataFrame):
 
             self.session.run("CREATE CONSTRAINT ON (node:User) ASSERT node.address IS UNIQUE")
 
             # Create contract nodes
-            for address in logs['from_'].unique():
-                statement = 'MERGE (:User {address: $address})'
+            for address in logs["from_"].unique():
+                statement = "MERGE (:User {address: $address})"
                 self.session.run(statement, dict(address=address))
 
             return
@@ -178,15 +178,15 @@ class Web3GraphModelling:
             self.session.run("CREATE CONSTRAINT ON (node:Contract) ASSERT node.address IS UNIQUE")
 
             # Create contract nodes
-            for address in logs['to_'].unique():
-                statement = 'MERGE (:Contract {address: $address})'
+            for address in logs["to_"].unique():
+                statement = "MERGE (:Contract {address: $address})"
                 self.session.run(statement, dict(address=address))
 
             return
 
         def create_relationships(self, logs: pd.DataFrame):
 
-            for index, row in logs.sort_values('blockNumber', ascending=True).iterrows():
+            for index, row in logs.sort_values("blockNumber", ascending=True).iterrows():
 
                 lines = list()
 
@@ -195,7 +195,7 @@ class Web3GraphModelling:
                 lines.append(f"CREATE(from) - [r:{row['function_called']}] -> (to)")
 
                 # execute the cypher statement
-                statement = '\n'.join(lines)
+                statement = "\n".join(lines)
                 result = self.session.run(statement)
 
             return result
@@ -210,8 +210,7 @@ class Web3GraphModelling:
 
             return
 
-        def reset_database(self, database: str = 'neo4j'):
-
+        def reset_database(self, database: str = "neo4j"):
             reset_statement = f"CREATE OR REPLACE DATABASE {database}"
             result = self.session.run(reset_statement)
             return result

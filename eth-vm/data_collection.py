@@ -1,4 +1,3 @@
-
 import json
 import logging
 import os
@@ -15,12 +14,14 @@ from web3._utils.events import get_event_data
 from web3.middleware.geth_poa import geth_poa_middleware
 
 logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 logger.setLevel(logging.INFO)
 
 
 class Web3ToolKit:
-    """This classes contains methods for pulling data from ethereum compatible networks. It can
+    """Set of utils to collect data via web3.
+
+    This classes contains methods for pulling data from ethereum compatible networks. It can
     be used for the BSC chain, Polygon or Ethereum, for which we need to provide a pair of URL and KEY
     for both the block explorer API (etherscan, polygonscan, bscscan) or and the node to which to
     connect via web3."""
@@ -29,23 +30,23 @@ class Web3ToolKit:
 
         self.network = network
 
-        config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+        config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
         self.config = yaml.load(open(config_path), Loader=yaml.FullLoader)
-        self.api_url = self.config.get(self.network)['API_URL']
-        self.node_url = self.config.get(self.network)['NODE_URL']
-        self.api_key = os.environ.get(f'{self.network.upper()}_API_KEY')
-        self.node_key = os.environ.get(f'ALCHEMY_{self.network.upper()}_NODE_KEY')
+        self.api_url = self.config.get(self.network)["API_URL"]
+        self.node_url = self.config.get(self.network)["NODE_URL"]
+        self.api_key = os.environ.get(f"{self.network.upper()}_API_KEY")
+        self.node_key = os.environ.get(f"ALCHEMY_{self.network.upper()}_NODE_KEY")
 
         self.w3 = self.connect_web3()
         self.start_block, self.end_block = 1, self.w3.eth.blockNumber
 
     def connect_web3(self):
-        """Connects to the network with w3 and returns the client and latest block."""
+        """Connect to the network with w3 and returns the client and latest block."""
 
         # Create connection
-        url = f'{self.node_url}{self.node_key}/'
+        url = f"{self.node_url}{self.node_key}/"
         w3 = Web3(Web3.HTTPProvider(url))
-        if self.network == 'polygon':
+        if self.network == "polygon":
             w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
         # Verify connection
@@ -62,8 +63,10 @@ class Web3ToolKit:
         return w3
 
     def search_contract_implementation_address(self, address: str) -> str:
-        """Try to collect the implementation address of the contract if it is implemented
-        behind a proxy address.
+        """Retrieve the implementation address of a conrtract.
+
+        Try to collect the implementation address of the contract if it is implemented behind a proxy address.
+
         Args:
             address (str): The contract address.
 
@@ -76,16 +79,16 @@ class Web3ToolKit:
             # more explanation can be found at https://eips.ethereum.org/EIPS/eip-1967#logic-contract-address
             storage_slot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
             impl_address = self.w3.eth.getStorageAt(Web3.toChecksumAddress(address), position=storage_slot)
-            impl_address = Web3.toHex(impl_address).replace('000000000000000000000000', '')
+            impl_address = Web3.toHex(impl_address).replace("000000000000000000000000", "")
 
         except Exception as e:
             impl_address = None
-            logger.error(f'Failed retrieving data from implementation storage slot. ERROR: {e}')
+            logger.error(f"Failed retrieving data from implementation storage slot. ERROR: {e}")
 
         return impl_address
 
     def request_contract_abi(self, address: str, max_trials: int = 10) -> dict:
-        """Extracts from an explorer's API the ABI of a given smart contract.
+        """Extract from an explorer's API the ABI of a given smart contract.
 
         Args:
             address (str): The address
@@ -100,16 +103,20 @@ class Web3ToolKit:
         """
 
         try:
-            request_params = dict(address=address, module='contract', action='getabi', apikey=self.api_key)
+            request_params = dict(
+                address=address,
+                module="contract",
+                action="getabi",
+                apikey=self.api_key,
+            )
             response = requests.post(self.api_url, params=request_params).json()
 
-            if response.get('status') == '1':
-                abi = json.loads(response.get('result'))
+            if response.get("status") == "1":
+                abi = json.loads(response.get("result"))
 
-            elif response.get('status') == '0':
+            elif response.get("status") == "0":
                 abi = None
-                error_message = (f"There's been an issue while retrieving the contract ABI ({address}). "
-                                 f"ERROR: {response.get('result')}")
+                error_message = f"There's been an issue while retrieving the contract ABI ({address}). " f"ERROR: {response.get('result')}"
                 logger.error(error_message)
 
             else:
@@ -123,9 +130,10 @@ class Web3ToolKit:
         return abi
 
     def create_contract_abi_events(self, abi: dict) -> dict:
-        """Get the keccak hash of the events of a smart contract ABI. This keccak hash can then
-        be used to filter API call logs by topic. By passing a keccak hash to the topic parameter
-        we only will retrieve the logs of a specific event.
+        """Get the keccak hash of the events of a smart contract ABI.
+
+        The keccak hash of a contract abi event can be used to filter API call logs by topic.
+        By passing a keccak hash to the topic parameter we only will retrieve the logs of a specific event.
 
         Args:
             abi (dict): The ABI of the smart contract, as dictionary.
@@ -134,7 +142,7 @@ class Web3ToolKit:
             dict: A dictionary having the event hash as keys the corresponding ABI event as values.
         """
 
-        contract_events = [field for field in abi if field['type'] == 'event']
+        contract_events = [field for field in abi if field["type"] == "event"]
         contract_events_hash = {event_abi_to_log_topic(abi_event): abi_event for abi_event in contract_events}
 
         return contract_events_hash
@@ -150,7 +158,8 @@ class Web3ToolKit:
             InterruptedError: The requests didn't succeed before the max_trials values has been reached.
 
         Returns:
-            Web3.Contract: The instance of the smart contract used for decoding inputs."""
+            Web3.Contract: The instance of the smart contract used for decoding inputs.
+        """
 
         address = Web3.toChecksumAddress(address)
         contract_instance = None
@@ -173,8 +182,11 @@ class Web3ToolKit:
 
 
 class ContractTransactions(Web3ToolKit):
-    """This class inherits from all the Web3ToolKit methods and variables, and is designed to collect and decode
-    transactions initiated by users to a given smart contract."""
+    """Collects and decodes transactions.
+
+    This class inherits from all the Web3ToolKit methods and variables. It is designed to collect and decode
+    transactions initiated by users to a given smart contract.
+    """
 
     def __init__(self, network):
 
@@ -195,21 +207,21 @@ class ContractTransactions(Web3ToolKit):
 
         data = list()
         request_params = dict()
-        request_params['startblock'] = start_block
-        request_params['endblock'] = end_block
-        request_params['address'] = address
-        request_params['apikey'] = self.api_key
-        request_params['module'] = 'account'
-        request_params['action'] = 'txlist'
+        request_params["startblock"] = start_block
+        request_params["endblock"] = end_block
+        request_params["address"] = address
+        request_params["apikey"] = self.api_key
+        request_params["module"] = "account"
+        request_params["action"] = "txlist"
 
         while True:
 
             # Collect the data
-            _s, _e = request_params.get('startblock'), request_params.get('endblock')
+            _s, _e = request_params.get("startblock"), request_params.get("endblock")
             logger.info(f"Extracting transactions from {_s} to {_e} for contract {address}")
 
             response = requests.post(self.api_url, params=request_params)
-            response = response.json().get('result')
+            response = response.json().get("result")
             data.append(response)
 
             if not response:
@@ -219,10 +231,10 @@ class ContractTransactions(Web3ToolKit):
             else:
                 try:
                     # Handle the exit of the while loop
-                    resp_block = max([int(x.get('blockNumber')) for x in response])
+                    resp_block = max(int(x.get("blockNumber")) for x in response)
                     resp_count = len(response)
-                    if resp_block < request_params.get('endblock') and resp_count == self.pagination_offset:
-                        request_params['startblock'] = resp_block
+                    if resp_block < request_params.get("endblock") and resp_count == self.pagination_offset:
+                        request_params["startblock"] = resp_block
                         continue
                     else:
                         logger.info("Finished downloading all the requested transactions.")
@@ -250,9 +262,9 @@ class ContractTransactions(Web3ToolKit):
         for transaction in tqdm(contract_transactions):
 
             try:
-                transaction_input = contract_instance.decode_function_input(str(transaction.get('input')))
-                transaction['function_called'] = transaction_input[0].fn_name
-                transaction['function_parameters'] = transaction_input[1]
+                transaction_input = contract_instance.decode_function_input(str(transaction.get("input")))
+                transaction["function_called"] = transaction_input[0].fn_name
+                transaction["function_parameters"] = transaction_input[1]
             except ValueError:
                 transaction_input = tuple([None, dict()])
 
@@ -262,11 +274,22 @@ class ContractTransactions(Web3ToolKit):
         """Format the resulting dataset by replacing hexadecimal values by human readable format."""
 
         df = pd.DataFrame(contract_transactions)
-        df['timeStamp'] = pd.to_datetime(df['timeStamp'], unit='s')
+        df["timeStamp"] = pd.to_datetime(df["timeStamp"], unit="s")
 
         # numerics
-        integers = ['blockNumber', 'nonce', 'value', 'gas', 'gasPrice', 'gasUsed', 'cumulativeGasUsed',
-                    'confirmations', 'transactionIndex', 'txreceipt_status', 'isError']
+        integers = [
+            "blockNumber",
+            "nonce",
+            "value",
+            "gas",
+            "gasPrice",
+            "gasUsed",
+            "cumulativeGasUsed",
+            "confirmations",
+            "transactionIndex",
+            "txreceipt_status",
+            "isError",
+        ]
 
         for f in integers:
             df[f] = df[f].astype(str)
@@ -275,6 +298,7 @@ class ContractTransactions(Web3ToolKit):
 
     def fetch_contract_transactions(self, address, start_block: int, end_block: int):
         """Extract and decode the transactions of a given smart contract over a specified block span.
+
         The process is to first look whether the contract is implemented at another address, then retrieve
         all transactions from the block explorer API, create a web3 contract instance that we can then use
         to decode the input of the retrieved transactions.
@@ -291,7 +315,7 @@ class ContractTransactions(Web3ToolKit):
         contract_impl_address = self.search_contract_implementation_address(address)
 
         try:
-            if not contract_impl_address or contract_impl_address == '0x0000000000000000':
+            if not contract_impl_address or contract_impl_address == "0x0000000000000000":
                 # The contract is not behind any proxy address
                 contract_transactions = self.request_contract_transactions(address, start_block, end_block)
                 contract_instance = self.create_contract_instance(address)
@@ -313,7 +337,8 @@ class ContractTransactions(Web3ToolKit):
 
 class ContractEventLogs(Web3ToolKit):
     """This class inherits from all the Web3ToolKit methods and variables, and is designed to collect and decode
-    the events logs that have been triggered for a given contract. """
+    the events logs that have been triggered for a given contract.
+    """
 
     def __init__(self, network: str):
 
@@ -334,22 +359,22 @@ class ContractEventLogs(Web3ToolKit):
 
         data = list()
         request_params = dict()
-        request_params['fromBlock'] = start_block
-        request_params['toBlock'] = end_block
-        request_params['address'] = address
-        request_params['apikey'] = self.api_key
-        request_params['module'] = 'logs'
-        request_params['action'] = 'getLogs'
-        request_params['offset'] = self.pagination_offset
+        request_params["fromBlock"] = start_block
+        request_params["toBlock"] = end_block
+        request_params["address"] = address
+        request_params["apikey"] = self.api_key
+        request_params["module"] = "logs"
+        request_params["action"] = "getLogs"
+        request_params["offset"] = self.pagination_offset
 
         while True:
 
             # Collect the data
-            _s, _e = request_params.get('fromBlock'), request_params.get('toBlock')
+            _s, _e = request_params.get("fromBlock"), request_params.get("toBlock")
             logger.info(f"Extracting logs from {_s} to {_e} for contract {address}")
 
             response = requests.post(self.api_url, params=request_params)
-            response = response.json().get('result')
+            response = response.json().get("result")
             data.append(response)
 
             if not response:
@@ -358,10 +383,10 @@ class ContractEventLogs(Web3ToolKit):
             else:
                 try:
                     # Handle the exit of the while loop
-                    resp_block = max([int(x.get('blockNumber'), 16) for x in response])
+                    resp_block = max(int(x.get("blockNumber"), 16) for x in response)
                     resp_count = len(response)
-                    if resp_block < request_params.get('toBlock') and resp_count == self.pagination_offset:
-                        request_params['fromBlock'] = resp_block
+                    if resp_block < request_params.get("toBlock") and resp_count == self.pagination_offset:
+                        request_params["fromBlock"] = resp_block
                         continue
                     else:
                         logger.info("Finished downloading all the requested event logs.")
@@ -386,11 +411,11 @@ class ContractEventLogs(Web3ToolKit):
         """
         for event in tqdm(contract_logs):
 
-            event['topics'] = [HexBytes(topic) for topic in event['topics']]
-            event['blockHash'] = event.get('blockHash')  # mandatory because accessed in web3 utils
+            event["topics"] = [HexBytes(topic) for topic in event["topics"]]
+            event["blockHash"] = event.get("blockHash")  # mandatory because accessed in web3 utils
             decoded_data = list()
 
-            for topic in event['topics']:
+            for topic in event["topics"]:
 
                 # we match event keccak hash and topics to find the events
                 event_abi = contract_abi_events.get(topic)
@@ -398,8 +423,8 @@ class ContractEventLogs(Web3ToolKit):
                 if event_abi:
                     # if there's a correspondance between event
                     event_data = get_event_data(self.w3.codec, event_abi, event)
-                    event_data = dict(event_data.get('args'))
-                    event_data['name'] = event_abi.get('name')
+                    event_data = dict(event_data.get("args"))
+                    event_data["name"] = event_abi.get("name")
                     decoded_data.append(event_data)
 
                 else:
@@ -407,7 +432,7 @@ class ContractEventLogs(Web3ToolKit):
                     event_data = list(dict())
                     decoded_data.append(event_data)
 
-            event['decoded_data'] = decoded_data
+            event["decoded_data"] = decoded_data
 
         return contract_logs
 
@@ -417,7 +442,14 @@ class ContractEventLogs(Web3ToolKit):
         df = pd.DataFrame(contract_logs)
 
         # numerics
-        integers = ['blockNumber', 'gasPrice', 'gasUsed', 'timeStamp', 'logIndex', 'transactionIndex']
+        integers = [
+            "blockNumber",
+            "gasPrice",
+            "gasUsed",
+            "timeStamp",
+            "logIndex",
+            "transactionIndex",
+        ]
 
         for f in integers:
             try:
@@ -427,7 +459,7 @@ class ContractEventLogs(Web3ToolKit):
                 pass
 
         # timestamps
-        df['timeStamp'] = pd.to_datetime(df['timeStamp'], unit='s')
+        df["timeStamp"] = pd.to_datetime(df["timeStamp"], unit="s")
 
         return df
 
@@ -448,7 +480,7 @@ class ContractEventLogs(Web3ToolKit):
         contract_impl_address = self.search_contract_implementation_address(address)
 
         try:
-            if not contract_impl_address or contract_impl_address == '0x0000000000000000':
+            if not contract_impl_address or contract_impl_address == "0x0000000000000000":
                 contract_abi = self.request_contract_abi(address)
                 contract_abi_events = self.create_contract_abi_events(contract_abi)
                 contract_logs = self.request_contract_logs(address, start_block, end_block)
@@ -469,10 +501,10 @@ class ContractEventLogs(Web3ToolKit):
         return contract_logs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    network = 'polygon'
-    address = '0xA0eC9E1542485700110688b3e6FbebBDf23cd901'
+    network = "polygon"
+    address = "0xA0eC9E1542485700110688b3e6FbebBDf23cd901"
 
     start_block = 1
     end_block = 26732552
