@@ -1,3 +1,0 @@
-# SUMMARY
-
-This project is split in a front-end and back-end part. The front-end is a react application rendering a portal where users can connect with their Solana wallet through Phantom and add gifs to their personal space. The back-end is a Solana program written in Rust and deployed on the dev net with the program ID [2Ph9ShJ7wV3PwPdrFcFaJZm53t33CSBYkv3DEB56cdsq](https://explorer.solana.com/address/2Ph9ShJ7wV3PwPdrFcFaJZm53t33CSBYkv3DEB56cdsq?cluster=devnet). Each time users will add a gif to their space, they will execute a transaction that will store the gif on their Solana account. The UI renders the GIF when the transaction has been executed successfully.
