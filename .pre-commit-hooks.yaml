@@ -1,0 +1,8 @@
+# - id: sqlfluff-lint
+#   name: sqlfluff-lint
+#   entry: sqlfluff lint
+#   language: python
+#   description: 'Lints sql files with `SQLFluff`'
+#   types: [sql]
+#   require_serial: true
+#   additional_dependencies: []
