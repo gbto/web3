@@ -2,6 +2,6 @@ ethereum:
   NODE_URL: https://eth-mainnet.alchemyapi.io/v2/
   API_URL: https://api.etherscan.io/api?
 contracts:
- - "0x7be8076f4ea4a4ad08075c2508e481d6c946d12b"
- - "0x7f268357a8c2552623316e2562d90e642bb538e5"
- - "0xa5409ec958c83c3f309868babaca7c86dcb077c1"
+- "0x7be8076f4ea4a4ad08075c2508e481d6c946d12b"
+- "0x7f268357a8c2552623316e2562d90e642bb538e5"
+- "0xa5409ec958c83c3f309868babaca7c86dcb077c1"
