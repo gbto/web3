@@ -1,4 +1,4 @@
-# Blockchain repository
+# WEB3
 
 A repository that contains blockchain related experimentations. It contains code to connect to different networks and collect validation and rewards data, contract transactions and events logs, or the code for smart contracts.
 
