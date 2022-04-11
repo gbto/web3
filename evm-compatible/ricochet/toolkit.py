@@ -25,6 +25,7 @@ class ToolKit:
 
     def execute_statement(self, cypher_statement: str, params: dict = dict()):
         """Execute a Cyper statement in the DBMS.
+
         This statement has to be valide in Neo browser, i.e. 'CREATE CONSTRAINT ON (node:Address)
         ASSERT node.address IS UNIQUE'.
         """

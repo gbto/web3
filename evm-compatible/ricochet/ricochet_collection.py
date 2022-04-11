@@ -16,12 +16,14 @@ logger.setLevel(logging.INFO)
 
 
 class Ricochet:
-    """Contains the method to the transactions and event logs of Ricochet smart contracts. This class re-uses the module
-    developed to fetch and decode ethereum compatible networks' smart contracts transactions and event logs.
+    """This class contains the methods to fetch and decode the transactions and event logs of Ricochet smart contracts.
+
+    It re-uses the module developed to fetch and decode ethereum compatible networks' smart contracts transactions
+    and event logs.
     """
 
     def __init__(self, network: str):
-        """Initialize the attributes of the Ricochet class
+        """Initialize the attributes of the Ricochet class.
 
         Args:
             network (str): The network to connect to (polygon, binance, ethereum, celo...)
@@ -38,7 +40,7 @@ class Ricochet:
         self.contracts = self.config.get("contracts")
 
     def get_transactions(self, address: str, start_block: int, end_block: int):
-        """Retrieves all the logs of the events triggered by the smart contract transactions.
+        """Retrieve all the logs of the events triggered by the smart contract transactions.
 
         Args:
             address (str):  The contract address.
@@ -62,7 +64,7 @@ class Ricochet:
         return data
 
     def get_events_logs(self, address: str, start_block: int, end_block: int):
-        """Retrieves all the logs of the events triggered by the smart contract transactions.
+        """Retrieve all the logs of the events triggered by the smart contract transactions.
 
         Args:
             address (str):  The contract address.
@@ -81,12 +83,14 @@ class Ricochet:
         start_block = start_block if start_block else self.get_cursor(table_name, field_name)
         end_block = end_block if end_block else client.end_block
 
-        data = client.fetch_contract_logs(address, start_block, end_block)
+        data = client.fetch_contrxwact_logs(address, start_block, end_block)
 
         return data
 
     def aggregate_contracts_data(self, start_block: int, end_block: int, category: str = "bank") -> pd.DataFrame:
-        """Iterates over the Ricochet contracts listed in the config file in order to extract and decode for each
+        """Fetch all the transactions of all smart contracts belonging to a given category.
+
+        Iterate over the Ricochet contracts listed in the config file in order to extract and decode for each
         the transactions and event logs that occurred between 2 blocks.
 
         Args:

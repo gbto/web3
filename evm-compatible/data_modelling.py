@@ -21,14 +21,14 @@ class Web3GraphModelling:
             self.session = self.driver.session()
 
         def __instantiate_driver(self, uri: str, usr: str, pwd: str):
-            """Instantiates the Neo4j driver used for interacting with the DBMS."""
+            """Instantiate the Neo4j driver used for interacting with the DBMS."""
             try:
                 return GraphDatabase.driver(uri, auth=(usr, pwd))
             except OSError:
                 raise ConnectionError(f"Could not connect to the neo4j bolt server at {uri}")
 
         def create_blocks(self, logs: pd.DataFrame):
-            """Creates the chain of blocks."""
+            """Create the chain of blocks."""
 
             self.session.run("CREATE CONSTRAINT ON (b:Block) ASSERT b.blockNumber IS UNIQUE")
             previous_block = None
@@ -53,7 +53,7 @@ class Web3GraphModelling:
             return
 
         def create_addresses(self, logs: pd.DataFrame):
-            """Creates all nodes in the contracts logs dataset.
+            """Create all nodes in the contracts logs dataset.
 
             We'll create both smart contracts accounts and wallet accounts.
             """
@@ -73,8 +73,10 @@ class Web3GraphModelling:
             return
 
         def create_transactions(self, logs: pd.DataFrame):
-            """Creates all nodes in the contracts logs dataset. We'll create both smart contracts
-            accounts and wallet accounts."""
+            """Create all nodes in the contracts logs dataset.
+
+            We'll create both smart contracts accounts and wallet accounts.
+            """
 
             self.session.run("CREATE CONSTRAINT ON (tx:Transaction) ASSERT tx.hash IS UNIQUE")
 
@@ -133,7 +135,7 @@ class Web3GraphModelling:
             return result
 
         def create_graph_model(self, logs: pd.DataFrame):
-            """Creates the entire model of the logs ingested from web3."""
+            """Create the entire model of the logs ingested from web3."""
             self.reset_database()
             self.create_blocks(logs)
             self.create_addresses(logs)
@@ -156,7 +158,7 @@ class Web3GraphModelling:
             self.session = self.driver.session()
 
         def __instantiate_driver(self, uri: str, usr: str, pwd: str):
-            """Instantiates the Neo4j driver used for interacting with the DBMS."""
+            """Instantiate the Neo4j driver used for interacting with the DBMS."""
             try:
                 return GraphDatabase.driver(uri, auth=(usr, pwd))
             except OSError:

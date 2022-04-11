@@ -24,7 +24,8 @@ class Web3ToolKit:
     This classes contains methods for pulling data from ethereum compatible networks. It can
     be used for the BSC chain, Polygon or Ethereum, for which we need to provide a pair of URL and KEY
     for both the block explorer API (etherscan, polygonscan, bscscan) or and the node to which to
-    connect via web3."""
+    connect via web3.
+    """
 
     def __init__(self, network: str):
 
@@ -182,7 +183,7 @@ class Web3ToolKit:
 
 
 class ContractTransactions(Web3ToolKit):
-    """Collects and decodes transactions.
+    """Fetch and decode EVM compatible smart contract transactions.
 
     This class inherits from all the Web3ToolKit methods and variables. It is designed to collect and decode
     transactions initiated by users to a given smart contract.
@@ -336,7 +337,9 @@ class ContractTransactions(Web3ToolKit):
 
 
 class ContractEventLogs(Web3ToolKit):
-    """This class inherits from all the Web3ToolKit methods and variables, and is designed to collect and decode
+    """Fetch and decode EVM compatible smart contract event logs.
+
+    This class inherits from all the Web3ToolKit methods and variables, and is designed to collect and decode
     the events logs that have been triggered for a given contract.
     """
 
@@ -401,8 +404,9 @@ class ContractEventLogs(Web3ToolKit):
         return data
 
     def decode_contract_logs_data(self, contract_logs: list[dict], contract_abi_events: dict):
-        """Decodes a list of contract logs by using the events ABI extracted from contract ABI. We
-        iterate over all the topics of each event log to create a list of decoded log data payload
+        """Decode a list of contract logs by using the events ABI extracted from contract ABI.
+
+        We iterate over all the topics of each event log to create a list of decoded log data payload
         which provides all the information about function executed context.
 
         Args:
@@ -465,6 +469,7 @@ class ContractEventLogs(Web3ToolKit):
 
     def fetch_contract_logs(self, address, start_block: int, end_block: int) -> pd.DataFrame:
         """Extract and decode the logs of a given smart contract over a specified block span.
+
         The process is to first obtain the contract ABI, extract the events from the contract ABI,
         then retrieve all the contract logs from the block explorer API, and finally create a web3
         contract instance that we can then use to decode the input of the retrieved transactions.
