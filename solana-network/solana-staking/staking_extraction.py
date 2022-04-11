@@ -4,16 +4,17 @@ import os
 import numpy as np
 import pandas as pd
 import requests
-from tqdm import tqdm
-
 from solana.publickey import PublicKey
 from solana.rpc.api import Client
 from solana.rpc.types import MemcmpOpts
+from tqdm import tqdm
 
 
 class SolanaAPI:
-    """This class contains methods that extracts data related to the solana blockchain. We use both the RPC API
-    https://docs.solana.com/developing/clients/jsonrpc-api and solanascan API where some data is already indexed.
+    """This class contains methods that extracts data related to the solana blockchain.
+
+    We use both the RPC API https://docs.solana.com/developing/clients/jsonrpc-api and
+    solanascan API where some data is already indexed.
     """
 
     def __init__(self):
@@ -101,7 +102,7 @@ class SolanaAPI:
         return data
 
     def get_all_transactions(self, start_date: datetime.datetime, address: str = None, limit=50):
-        """Extracts all the transactions for an account from solanascan API."""
+        """Extract all the transactions for an account from solanascan API."""
 
         address = self.wallet_address if not address else address
         before_hash = None
@@ -150,7 +151,8 @@ class SolanaAPI:
     def get_solana_transfers(self, start_date: datetime.datetime, address: str = None, limit=100):
         """Extract solana transfers from all transactions of a given account.
 
-        Are filtered out the programs related transactions as well as the token transfers."""
+        Are filtered out the programs related transactions as well as the token transfers.
+        """
 
         address = self.wallet_address if not address else address
         transactions = self.get_all_transactions(address=address, start_date=start_date)
@@ -175,11 +177,6 @@ class SolanaAPI:
             data["wallet_address"] = address
             data["inserted_at"] = self.execution_timestamp
             data["blockTime"] = pd.to_datetime(data["blockTime"], unit="s")
-
-            # fields_to_delete = ['logMessage', 'inputAccount', 'innerInstructions', 'tokenBalanes', 'parsedInstruction',
-            #                     'tokenTransfers', 'serumTransactions', 'raydiumTransactions', 'unknownTransfers',
-            #                     'solTransfers']
-            # data = data.drop(fields_to_delete, axis=1)
 
         else:
 
@@ -211,7 +208,7 @@ class SolanaAPI:
         return validators
 
     def get_validators_rewards(self, vote_keys: list = None, start_epoch: int = None):
-        "Extracts the inflation reward for validators."
+        """Extract the inflation reward for validators."""
 
         if not vote_keys:
             vote_keys = self.get_validators_snapshot()["votePubkey"].tolist()
