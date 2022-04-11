@@ -7,7 +7,8 @@ ignore = E501, # line too long
         D102, # Missing docstring in public method
         D100, # Missing docstring in public module
         D101, # Missing docstring in public class
-        D107 # Missing docstring in __init__
+        D107, # Missing docstring in __init__
+        E203 # whitespace before ':'
 exclude =
     .git,
     __pycache__,
