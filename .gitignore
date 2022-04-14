@@ -5,7 +5,7 @@
 .env
 
 # virtualenv
-venv/
+.venv/
 ENV/
 
 # Created by .ignore support plugin (hsz.mobi)
