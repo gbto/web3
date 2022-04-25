@@ -83,7 +83,7 @@ class Ricochet:
         start_block = start_block if start_block else self.get_cursor(table_name, field_name)
         end_block = end_block if end_block else client.end_block
 
-        data = client.fetch_contrxwact_logs(address, start_block, end_block)
+        data = client.fetch_contract_logs(address, start_block, end_block)
 
         return data
 
@@ -137,10 +137,10 @@ if __name__ == "__main__":
     end_block = 26582304
 
     # Collect all logs and transactions for a specific contract
-    # address = '0xA0eC9E1542485700110688b3e6FbebBDf23cd901'
-    # txs = client.get_transactions(address, start_block, end_block)
-    # logs = client.get_events_logs(address, start_block, end_block)
+    address = "0xA0eC9E1542485700110688b3e6FbebBDf23cd901"
+    txs = client.get_transactions(address, start_block, end_block)
+    logs = client.get_events_logs(address, start_block, end_block)
 
-    # Collect all logs and transactions for a contract category
-    contract_category = "bank"
-    txs, logs = client.aggregate_contracts_data(start_block, end_block, contract_category)
+    # # Collect all logs and transactions for a contract category
+    # contract_category = "bank"
+    # txs, logs = client.aggregate_contracts_data(start_block, end_block, contract_category)
