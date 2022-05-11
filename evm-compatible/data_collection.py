@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import os
@@ -5,6 +6,7 @@ import time
 
 import pandas as pd
 import requests
+import web3
 import yaml
 from eth_utils import event_abi_to_log_topic
 from hexbytes import HexBytes
@@ -27,23 +29,52 @@ class Web3ToolKit:
     connect via web3.
     """
 
-    def __init__(self, network: str):
+    def __init__(self, network: str) -> None:
 
         self.network = network
 
         config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
-        self.config = yaml.load(open(config_path), Loader=yaml.FullLoader)
+        self.config = yaml.safe_load(open(config_path))
+
         self.api_url = self.config.get(self.network)["API_URL"]
         self.node_url = self.config.get(self.network)["NODE_URL"]
-        self.api_key = os.environ.get(f"{self.network.upper()}_API_KEY")
-        self.node_key = os.environ.get(f"ALCHEMY_{self.network.upper()}_NODE_KEY")
+        self.api_key, self.node_key = self.parse_credentials(self.network)
 
         self.w3 = self.connect_web3()
         self.start_block, self.end_block = 1, self.w3.eth.blockNumber
 
-    def connect_web3(self):
-        """Connect to the network with w3 and returns the client and latest block."""
+    def parse_credentials(self, network: str):
+        """Parse the authentication keys required to connect to an explorer API and network node.
 
+        Args:
+            network (str): The network of interest.
+
+        Raises:
+            AssertionError: The required environment variables haven't been correctly defined.
+
+        Returns:
+            tuple(str): A tuple of the explorer API key and network node key.
+        """
+        try:
+            api_key = os.environ[f"{self.network.upper()}_API_KEY"]
+            node_key = os.environ[f"ALCHEMY_{self.network.upper()}_NODE_KEY"]
+
+        except KeyError:
+            raise AssertionError(
+                "For collecting and decoding data from a network, this modules needs ",
+                f"to connect to both an explorer API and a network node. For getting data on {self.network}, ",
+                f"you need to set the {self.network.upper()}_API_KEY and ALCHEMY_{self.network.upper()}_NODE_KEY ",
+                "environment variables.",
+            )
+
+        return api_key, node_key
+
+    def connect_web3(self) -> Web3:
+        """Connect to the network with w3 and returns the client and latest block.
+
+        Returns:
+            Web3: The Web3 instance used to interact with the network.
+        """
         # Create connection
         url = f"{self.node_url}{self.node_key}/"
         w3 = Web3(Web3.HTTPProvider(url))
@@ -93,11 +124,10 @@ class Web3ToolKit:
 
         Args:
             address (str): The address
-            max_trials (int, optional): Maximum number of trials. Defaults to 10.
+            max_trials (int): Maximum number of trials. Defaults to 10.
 
         Raises:
-            InterruptedError: The requests didn't succeed before the max_trials values has been reached.
-            Exception: The requests didn't succeed for another reason than connection issue.
+            ConnectionError: The contract ABI couldn't be retrieved.
 
         Returns:
             dict: The JSON formatted ABI of the smart contract.
@@ -126,8 +156,7 @@ class Web3ToolKit:
                 logger.error(error_message)
 
         except Exception as e:
-            logger.info(f"The call to the ABI didn't work. ERROR: {e}")
-
+            raise ConnectionError(f"The call to the ABI didn't work. ERROR: {e}")
         return abi
 
     def create_contract_abi_events(self, abi: dict) -> dict:
@@ -148,18 +177,19 @@ class Web3ToolKit:
 
         return contract_events_hash
 
-    def create_contract_instance(self, address: str, max_trials: int = 2):
+    def create_contract_instance(self, address: str, max_trials: int = 2) -> web3.eth.Contract:
         """Get contract ABI and creates the web3 contract instance for decoding transactions inputs.
 
         Args:
             address (str): The address of the contract we want to instantiate.
-            max_trials (int, optional): Maximum number of trials. Defaults to 10.
+            max_trials (int): Maximum number of trials. Defaults to 2.
 
         Raises:
             InterruptedError: The requests didn't succeed before the max_trials values has been reached.
+            Exception: The requests didn't succeed before the max_trials values has been reached.
 
         Returns:
-            Web3.Contract: The instance of the smart contract used for decoding inputs.
+            web3.eth.Contract: The instance of the smart contract used for decoding inputs.
         """
 
         address = Web3.toChecksumAddress(address)
@@ -177,9 +207,56 @@ class Web3ToolKit:
                 n_trials += 1
 
             except Exception as e:
-                raise Exception(f"The call to the ABI didn't work. ERROR: {e}")
+                raise Exception(f"The call to the ABI didn't work. ERROR: {e}") from e
 
         return contract_instance
+
+    def decode_hex_fields(self, serie: pd.Series) -> pd.Series:
+        """Decode hexadecimal bytes to bytes strings or byteto hexadecimal strings.
+
+        Args:
+            serie (pd.Series): A pandas Serie containing HexBytes or hex strings.
+
+        Returns:
+            pd.Series: The pandas Serie with converted hex values.
+        """
+        try:
+            serie = serie.map(lambda x: [y.hex() for y in x])
+        except AttributeError:
+            serie = serie.map(lambda x: int(x, base=16) if x != "0x" else None)
+            serie = serie if max(serie) < 2147483647 else serie.astype("float64")
+        return serie
+
+    def normalize_nested_fields(self, serie: pd.Series) -> pd.Series:
+        """Normalize nested fields and clean potential empty or null values.
+
+        Args:
+            serie (pd.Series): A pandas Serie containing raw nested fields.
+
+        Returns:
+            pd.Series: The normalized and cleaned pandas Serie.
+        """
+        serie = pd.json_normalize(serie).astype("str")
+        serie = serie.apply(lambda x: x.replace({"[]": None, "None": None}))
+        serie = serie.dropna(axis=1, how="all").squeeze()
+        serie = serie if not serie.empty else pd.Series([None for x in serie.index])
+        return serie
+
+    def decode_json_payloads(self, serie: pd.Series) -> pd.Series:
+        """Transform to string the bytes values potentially present in a list of dict.
+
+        Args:
+            serie (pd.Series): A series containing dictionaries.
+
+        Returns:
+            pd.Series: The decoded series.
+        """
+        if serie.sum():
+            serie = serie.map(lambda x: ast.literal_eval(x))
+            serie = serie.map(lambda d: {k: (v.hex() if type(v) is bytes else v) for k, v in d.items()})
+        else:
+            pass  # The serie only contains null values
+        return serie
 
 
 class ContractTransactions(Web3ToolKit):
@@ -271,13 +348,19 @@ class ContractTransactions(Web3ToolKit):
 
         return contract_transactions
 
-    def format_contract_transactions_input(self, contract_transactions: list[dict]):
-        """Format the resulting dataset by replacing hexadecimal values by human readable format."""
+    def format_contract_transactions_input(self, contract_transactions: list[dict]) -> pd.DataFrame:
+        """Format the resulting dataset by replacing hexadecimal values by human readable format.
 
+
+        Args:
+            contract_transactions (list[dict]): The un-processed contract transactions data points.
+
+        Returns:
+            pd.DataFrame: The processed contract transactions data points.
+        """
         df = pd.DataFrame(contract_transactions)
-        df["timeStamp"] = pd.to_datetime(df["timeStamp"], unit="s")
 
-        # numerics
+        # Decode hexadecimal numeric values
         integers = [
             "blockNumber",
             "nonce",
@@ -291,13 +374,18 @@ class ContractTransactions(Web3ToolKit):
             "txreceipt_status",
             "isError",
         ]
+        df[integers] = df[integers].apply(lambda x: self.decode_hex_fields(x))
 
-        for f in integers:
-            df[f] = df[f].astype(str)
-            df[f] = df[f].apply(int, base=16)
+        # Cast UNIX timestamps to datetime
+        df["timeStamp"] = pd.to_datetime(df["timeStamp"], unit="s")
+
+        # Convert object to string for parquet storage
+        object_fields = df.select_dtypes("object").columns
+        df[object_fields] = df[object_fields].astype("str")
+
         return df
 
-    def fetch_contract_transactions(self, address, start_block: int, end_block: int):
+    def fetch_contract_transactions(self, address: str, start_block: int, end_block: int) -> list[dict]:
         """Extract and decode the transactions of a given smart contract over a specified block span.
 
         The process is to first look whether the contract is implemented at another address, then retrieve
@@ -330,9 +418,9 @@ class ContractTransactions(Web3ToolKit):
             contract_transactions = self.decode_contract_transactions_input(contract_transactions, contract_instance)
             contract_transactions = self.format_contract_transactions_input(contract_transactions)
 
-        except Exception:
-            contract_transactions = None
-
+        except Exception as error:
+            logger.info(f"Failed retrieving contracts logs because of ERROR: {error}")
+            raise ValueError(f"Couldn't retrieve transactions for {address} ", f"between block #{start_block} and #{end_block}")
         return contract_transactions
 
 
@@ -440,12 +528,19 @@ class ContractEventLogs(Web3ToolKit):
 
         return contract_logs
 
-    def format_contract_logs_data(self, contract_logs: list) -> pd.DataFrame:
-        """Format the resulting dataset by replacing hexadecimal values by human readable format."""
+    def format_contract_logs_data(self, contract_logs: list[dict]) -> pd.DataFrame:
+        """Format the resulting dataset by replacing hexadecimal values by human readable format.
+
+        Args:
+            contract_logs (list[dict]): The un-processed contract events logs data points.
+
+        Returns:
+            pd.DataFrame: The processed contract events logs data points.
+        """
 
         df = pd.DataFrame(contract_logs)
 
-        # numerics
+        # Decode hexadecimal numeric values
         integers = [
             "blockNumber",
             "gasPrice",
@@ -454,16 +549,21 @@ class ContractEventLogs(Web3ToolKit):
             "logIndex",
             "transactionIndex",
         ]
+        df[integers] = df[integers].apply(lambda x: self.decode_hex_fields(x))
 
-        for f in integers:
-            try:
-                df[f] = df[f].astype(str)
-                df[f] = df[f].apply(int, base=16)
-            except ValueError:
-                pass
-
-        # timestamps
+        # Convert UNIX timestamps to datetime
         df["timeStamp"] = pd.to_datetime(df["timeStamp"], unit="s")
+
+        # Decode the topics binary hexadecimal values
+        df["topics"] = self.decode_hex_fields(df["topics"])
+
+        # Normalize nested objects
+        df["decoded_data"] = self.normalize_nested_fields(df["decoded_data"])
+        df["decoded_data"] = self.decode_json_payloads(df["decoded_data"])
+
+        # Convert object to string for parquet storage
+        object_fields = df.select_dtypes("object").columns
+        df[object_fields] = df[object_fields].astype("str")
 
         return df
 
@@ -498,18 +598,16 @@ class ContractEventLogs(Web3ToolKit):
             contract_logs = self.decode_contract_logs_data(contract_logs, contract_abi_events)
             contract_logs = self.format_contract_logs_data(contract_logs)
 
-        except Exception as e:
-            contract_logs = None
-            error_message = f"Failed retrieving contracts logs because of ERROR: {e}"
-            logger.info(error_message)
-
+        except Exception as error:
+            logger.info(f"Failed retrieving contracts logs because of ERROR: {error}")
+            raise ValueError(f"Couldn't retrieve transactions for {address} ", f"between block #{start_block} and #{end_block}")
         return contract_logs
 
 
 if __name__ == "__main__":
 
     network = "polygon"
-    address = "0xA0eC9E1542485700110688b3e6FbebBDf23cd901"
+    address = "0xaD39F774A75C7673eE0c8Ca2A7b88454580D7F53"
 
     start_block = 1
     end_block = 26732552
